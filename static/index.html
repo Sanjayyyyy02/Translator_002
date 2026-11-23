@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143c3a">
+  <title>Sanjay’s Translator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="bg-layer" aria-hidden="true">
+    <video id="bg-video" muted loop playsinline preload="auto" aria-hidden="true"></video>
+  </div>
+
+  <main class="page-shell">
+    <section class="translator-card" aria-labelledby="page-title">
+      <header class="page-header">
+        <p class="eyebrow"><span class="brand-mark" aria-hidden="true">अ</span> English to Indian languages</p>
+        <h1 id="page-title">Sanjay’s Translator</h1>
+        <p class="intro">A little clarity can travel a long way. Write in English and choose where your words should go.</p>
+      </header>
+
+      <form id="translation-form" novalidate>
+        <div class="field-heading">
+          <label id="input-label" for="text">English text</label>
+          <span id="char-count" class="character-count" aria-live="polite" aria-atomic="true">0 / 5,000</span>
+        </div>
+        <textarea id="text" name="text" rows="5" maxlength="5000" lang="en" placeholder="Type a phrase or a paragraph…" aria-describedby="input-hint char-count" required></textarea>
+        <p id="input-hint" class="field-hint">Up to 5,000 characters. Line breaks are kept as sentence breaks.</p>
+
+        <div class="language-direction" role="group" aria-label="Translation direction">
+          <div class="language-field">
+            <label for="source-language">From</label>
+            <select id="source-language" name="source" aria-describedby="language-hint" required disabled>
+              <option value="">Loading…</option>
+            </select>
+          </div>
+          <button id="swap-btn" class="button button-swap" type="button" aria-label="Swap languages" title="Swap languages" disabled>⇄</button>
+          <div class="language-field">
+            <label for="target-language">To</label>
+            <select id="target-language" name="target" aria-describedby="language-hint" required disabled>
+              <option value="">Loading…</option>
+            </select>
+          </div>
+        </div>
+        <p id="language-hint" class="field-hint">English must be one side of every translation.</p>
+
+        <div class="quality-option-wrap">
+          <label class="quality-option" for="roundtrip-check">
+            <input id="roundtrip-check" name="roundtrip" type="checkbox" aria-describedby="quality-hint">
+            <span>Check quality (slower)</span>
+          </label>
+          <p id="quality-hint" class="field-hint">Adds a back-translation consistency check.</p>
+        </div>
+
+        <details class="reference-details">
+          <summary>Compare with a reference <span class="optional-label">Optional</span></summary>
+          <div class="reference-content">
+            <label id="reference-label" for="reference">Tamil reference translation</label>
+            <textarea id="reference" name="reference" rows="3" placeholder="Paste a trusted translation to compare BLEU and chrF scores."></textarea>
+            <p class="field-hint">Scores are most useful when the reference says the same thing as your English text.</p>
+          </div>
+        </details>
+
+        <div class="form-actions">
+          <button id="translate-btn" class="button button-primary" type="submit" disabled>
+            <span id="translate-label">Translate</span>
+          </button>
+          <button id="clear-btn" class="button button-secondary" type="button">Clear</button>
+        </div>
+      </form>
+
+      <div id="error" class="message message-error" role="alert" aria-live="assertive" hidden></div>
+
+      <section id="result" class="results" aria-labelledby="result-title" aria-live="polite" aria-atomic="false" hidden>
+        <div class="section-rule"><span>YOUR RESULT</span></div>
+
+        <div class="result-heading">
+          <div>
+            <p class="eyebrow result-eyebrow">Translation</p>
+            <h2 id="result-title">Tamil translation</h2>
+          </div>
+          <button id="copy-btn" class="button button-small" type="button" aria-label="Copy translation">Copy</button>
+        </div>
+        <p id="output" class="translation-output" lang=""></p>
+        <p id="copy-status" class="visually-hidden" aria-live="polite"></p>
+
+        <div class="result-tools">
+          <button id="listen-btn" class="button button-listen" type="button" disabled aria-describedby="voice-note">Listen</button>
+          <p id="voice-note" class="field-hint voice-note">Checking available voices…</p>
+        </div>
+        <audio id="speech-audio" class="audio-player" controls hidden aria-label="Audio for the translation"></audio>
+
+        <dl class="metric-grid">
+          <div class="metric-card">
+            <dt>Model confidence</dt>
+            <dd id="confidence">—</dd>
+            <span class="metric-note">A model estimate, not a guarantee</span>
+          </div>
+          <div class="metric-card">
+            <dt>Time taken</dt>
+            <dd id="seconds">—</dd>
+            <span id="time-note" class="metric-note">Translation only</span>
+          </div>
+        </dl>
+
+        <section id="roundtrip-result" class="roundtrip-card" aria-labelledby="roundtrip-title" hidden>
+          <div class="roundtrip-heading">
+            <div>
+              <p class="eyebrow result-eyebrow">Consistency check</p>
+              <h3 id="roundtrip-title">Back to English</h3>
+            </div>
+            <span class="consistency-label">Not reference BLEU</span>
+          </div>
+          <p class="roundtrip-caption">The translation is converted back to English to check how closely the meaning returns.</p>
+          <p id="roundtrip-text" class="roundtrip-text"></p>
+          <div class="score-line">
+            <span>Round-trip BLEU</span>
+            <strong id="roundtrip-bleu">—</strong>
+            <span id="roundtrip-interpretation" class="score-badge">—</span>
+          </div>
+        </section>
+
+        <section id="reference-result" class="reference-result" aria-labelledby="reference-result-title" hidden>
+          <p class="eyebrow result-eyebrow">Reference comparison</p>
+          <h3 id="reference-result-title">Compared with your reference</h3>
+          <div class="reference-scores">
+            <p><span>BLEU</span><strong id="reference-bleu">—</strong></p>
+            <p><span>chrF</span><strong id="reference-chrf">—</strong></p>
+            <span id="reference-interpretation" class="score-badge">—</span>
+          </div>
+        </section>
+      </section>
+
+      <footer class="page-footer">Made for words that cross borders.</footer>
+    </section>
+  </main>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
